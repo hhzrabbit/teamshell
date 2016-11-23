@@ -28,31 +28,35 @@ int main() {
   char * command[32];
   int f = -1;
   
-  // > LOOP HERE
-  
-  // Reading From Command Line
-  fgets(dest, 256, stdin);
-  
-  // Parsing Commands
-  int i = 0;
-  while (dest) {
-    command[i] = strsep(&dest, " ");
-    i++;
-  }
-  
-  // >> FORK HERE
-  f = fork();
-  if (f == 0) {    
-    // Execute Command
-    command[i-1][strlen(command[i-1]) - 1] = 0;
-    command[i] = NULL;
-    int j = execvp(command[0], command);
-    exit(0);
-  } else {
-    wait();
-  }
-  // >> END FORK
+  // > LOOP HERE FOR TERMINAL
+  while (1) {
+    
+    // Reading From Command Line
+    fgets(dest, 256, stdin);
+    //if (dest[strlen(dest)-1] = '\n')
+    //  dest[strlen(dest)-1] = 0;
+    char * a = strchr(
+    // Parsing Commands
+    int i = 0;
+    while (dest) {
+      command[i] = strsep(&dest, " ");
+      i++;
+    }
+    command[i] = NULL;  
+    // >> FORK HERE
+    f = fork();
+    if (f == 0) {    
+      // Execute Command
+      int j = execvp(command[0], command);
+      exit(0);
+    } else {
+      wait();
+    }
+    // >>> FLUSH BUFFER HERE
+    
+    // >> END FORK
 
+  }
   // > END LOOP
 
   // Exit
