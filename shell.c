@@ -19,7 +19,20 @@ static void sighandler(int signo) {
     }
 }
 
-void cd(char ** command){
+int execute(char ** command) {
+  // Execute Command
+  int f = fork();
+  int j = -1;
+  if (f == 0) {
+    j = execvp(command[0], command);
+    exit(0);
+  } else {
+    wait();
+  }
+  return j;
+}
+
+void cd(char ** command) {
   int res;
   
   //$ cd (takes you to home)
@@ -89,15 +102,7 @@ int main() {
       if (strcoll(command[0], "cd") == 0)
 	cd(command);
       else {
-	// >> FORK HERE
-	f = fork();
-	if (f == 0) {    
-	  // Execute Command
-	  int j = execvp(command[0], command);
-	  exit(0);
-	} else {
-	  sleep(1);
-	}
+	  int j = execute(command);
       }
       // >> END FORK
       if (!dest) {
