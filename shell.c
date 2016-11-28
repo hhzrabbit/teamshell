@@ -22,13 +22,12 @@ static void sighandler(int signo) {
 void cd(char ** command){
   int res;
   
-  //$ cd
-  //takes you to home
+  //$ cd (takes you to home)
   if (! command[1]) 
     res = chdir(home);
 
-  //$ cd ~
-  //takes you home
+  //$ cd ~ (takes you home)
+  //$ cd ~/<somewhere> 
   else if (command[1][0] == '~'){
     char path[256];
     strcpy(path, home);
@@ -37,7 +36,6 @@ void cd(char ** command){
   }
 
   //$ cd <somewhere>
-  //takes you to <somewhere>
   else {
     res = chdir(command[1]);
   }
@@ -65,14 +63,12 @@ int main() {
   // > LOOP HERE FOR TERMINAL
   while (1) {
 
-
     // Reading From Command Line
     getcwd(cwd, sizeof(cwd));
     printf("%s > ", cwd);
     fgets(dest, 256, stdin);
     if (dest[strlen(dest)-1] = '\n')
       dest[strlen(dest)-1] = 0;
-
 
     while (1) {
       // Parsing Commands
