@@ -25,6 +25,8 @@ int execute(char ** command) {
   int j = -1;
   if (f == 0) {
     j = execvp(command[0], command);
+    if (j == -1)
+      printf("Invalid command.\n");
     exit(0);
   } else {
     wait();
@@ -99,8 +101,11 @@ int main() {
       command[i] = NULL;  
 
       //cd
-      if (strcoll(command[0], "cd") == 0)
+      if (strcmp(command[0], "cd") == 0)
 	cd(command);
+      //exit
+      else if (strcmp(command[0], "exit") == 0) 
+	exit(0);
       else {
 	  int j = execute(command);
       }
