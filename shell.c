@@ -86,14 +86,19 @@ int main() {
       command[i] = NULL;  
 
       //cd
-      if (strcoll(command[0], "cd") == 0)
+      if (strcmp(command[0], "cd") == 0)
 	cd(command);
+      //exit
+      else if (strcmp(command[0], "exit") == 0) 
+	exit(0);
       else {
 	// >> FORK HERE
 	f = fork();
 	if (f == 0) {    
 	  // Execute Command
 	  int j = execvp(command[0], command);
+	  if (j == -1)
+	    printf("Invalid command.\n");
 	  exit(0);
 	} else {
 	  sleep(1);
