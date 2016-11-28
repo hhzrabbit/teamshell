@@ -13,7 +13,6 @@
 static void sighandler(int signo) {
   if (signo == SIGINT)
     { // ^C (signal 2)
-      // printf("\nGoodbye, friend. [Closed by SIGINT]\n");
       exit(0);
     }
 }
@@ -26,18 +25,21 @@ int main() {
   char d[100];
   char * dest = d;
   char * command[32];
-  int f = -1;
+  int f = -1; // For Forking
+  int i = 0; // For Parsing Commands
   
   // > LOOP HERE FOR TERMINAL
   while (1) {
-    
+
+
     // Reading From Command Line
+    printf("><> ");
     fgets(dest, 256, stdin);
-    //if (dest[strlen(dest)-1] = '\n')
-    //  dest[strlen(dest)-1] = 0;
-    char * a = strchr(
+    if (dest[strlen(dest)-1] = '\n')
+      dest[strlen(dest)-1] = 0;
+
     // Parsing Commands
-    int i = 0;
+    i = 0;
     while (dest) {
       command[i] = strsep(&dest, " ");
       i++;
@@ -52,8 +54,8 @@ int main() {
     } else {
       wait();
     }
-    // >>> FLUSH BUFFER HERE
-    
+    dest = d; // RESET BUFFER
+
     // >> END FORK
 
   }
