@@ -38,26 +38,37 @@ int main() {
     if (dest[strlen(dest)-1] = '\n')
       dest[strlen(dest)-1] = 0;
 
-    // Parsing Commands
-    i = 0;
-    while (dest) {
-      command[i] = strsep(&dest, " ");
-      i++;
-    }
-    command[i] = NULL;  
-    // >> FORK HERE
-    f = fork();
-    if (f == 0) {    
-      // Execute Command
-      int j = execvp(command[0], command);
-      exit(0);
-    } else {
-      wait();
-    }
-    dest = d; // RESET BUFFER
 
-    // >> END FORK
+    while (1) {
+      // Parsing Commands
+      i = 0;
+      while (dest) {
+	command[i] = strsep(&dest, " ");
 
+	// >> SEMICOLON CHECK
+	if (strcmp(command[i],";") == 0) {
+	  break;
+	}
+	// >> END SEMICOLON CHECK
+	i++;
+      }
+      command[i] = NULL;  
+
+      // >> FORK HERE
+      f = fork();
+      if (f == 0) {    
+	// Execute Command
+	int j = execvp(command[0], command);
+	exit(0);
+      } else {
+	wait();
+      }
+      // >> END FORK
+      if (!dest) {
+	dest = d; // RESET BUFFER
+	break;
+      }
+    }
   }
   // > END LOOP
 
