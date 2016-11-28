@@ -19,12 +19,75 @@ static void sighandler(int signo) {
     }
 }
 
+//checks to see if redirection in the command
+//type == 0 -> <
+//type == 1 -> >
+int checkForRedirect(char ** command, int type){
+  char sign[2];
+  if (type == 0)
+    strncpy(sign, "<", 2);
+  else 
+    strncpy(sign, ">", 2);
+  int index = 0;
+  while(* command) {
+    if (strcmp(* command, sign) == 0)
+      return index;
+    index++;
+    command++;
+  }
+  return -1;
+}
+
+//type == 0 -> redirect input
+//type == 1 -> redirect output
+//returns file descriptor to stdin / stdout that was redirected
+int redirect(char * redirectTo, int type){
+  int fd;
+  int fdToReplace;
+  if (type == 0){
+    fd = open(redirectTo, O_RDONLY);
+    fdToReplace = 0;
+  }
+  else {
+    fd = open(redirectTo, O_WRONLY);
+    fdToReplace = 1;
+  }
+  int ret = dup(fdToReplace);
+  dup2(fd, fdToReplace);
+  return ret;
+}
+
+//type == 0 -> stdin
+//type == 1 -> stdout
+void resetStdInOrOut(int fd, int type){
+  dup2(fd, type);
+}
+
 int execute(char ** command) {
   // Execute Command
   int f = fork();
   int j = -1;
   if (f == 0) {
+    int redirOutput = checkForRedirect(command, 0);
+    int redirInput = checkForRedirect(command, 1);
+    int saveStdIn, saveStdOut = -1;
+    if (redirInput != -1){
+      saveStdIn = redirect(command[redirInput + 1], 0);
+      command[redirInput] = 0;
+    }
+
+    if (redirOutput != -1){
+      saveStdOut = redirect(command[redirOutput + 1], 1);
+      command[redirOutput] = 0;
+    }    
+
     j = execvp(command[0], command);
+
+    if (saveStdIn != -1)
+      resetStdInOrOut(saveStdIn, 0);
+    if (saveStdOut != -1)
+      resetStdInOrOut(saveStdOut, 1);
+    
     if (j == -1)
       printf("Invalid command.\n");
     exit(0);
@@ -33,6 +96,7 @@ int execute(char ** command) {
   }
   return j;
 }
+
 
 void cd(char ** command) {
   int res;
@@ -57,7 +121,6 @@ void cd(char ** command) {
 
   if (res == -1)
     printf("No such directory\n");
-  
 }
 
 int main() {
