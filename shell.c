@@ -10,6 +10,8 @@
 #include <string.h>
 #include <fcntl.h>
 
+char home[1024];
+
 static void sighandler(int signo) {
   if (signo == SIGINT)
     { // ^C (signal 2)
@@ -17,14 +19,46 @@ static void sighandler(int signo) {
     }
 }
 
+void cd(char ** command){
+  int res;
+  
+  //$ cd
+  //takes you to home
+  if (! command[1]) 
+    res = chdir(home);
+
+  //$ cd ~
+  //takes you home
+  else if (command[1][0] == '~'){
+    char path[256];
+    strcpy(path, home);
+    strcat(path, ++command[1]);
+    res = chdir(path);
+  }
+
+  //$ cd <somewhere>
+  //takes you to <somewhere>
+  else {
+    res = chdir(command[1]);
+  }
+
+  if (res == -1)
+    printf("No such directory\n");
+  
+}
+
 int main() {
   // Settings + Signals
   umask(0);
   signal (SIGINT, sighandler);
-
-  char d[100];
+  char cwd[1024];
+  
+  //save path to home
+  getcwd(home, sizeof(cwd));
+  
+  char d[256];
   char * dest = d;
-  char * command[32];
+  char * command[256];
   int f = -1; // For Forking
   int i = 0; // For Parsing Commands
   
@@ -33,7 +67,8 @@ int main() {
 
 
     // Reading From Command Line
-    printf("><> ");
+    getcwd(cwd, sizeof(cwd));
+    printf("%s > ", cwd);
     fgets(dest, 256, stdin);
     if (dest[strlen(dest)-1] = '\n')
       dest[strlen(dest)-1] = 0;
@@ -54,14 +89,19 @@ int main() {
       }
       command[i] = NULL;  
 
-      // >> FORK HERE
-      f = fork();
-      if (f == 0) {    
-	// Execute Command
-	int j = execvp(command[0], command);
-	exit(0);
-      } else {
-	wait();
+      //cd
+      if (strcoll(command[0], "cd") == 0)
+	cd(command);
+      else {
+	// >> FORK HERE
+	f = fork();
+	if (f == 0) {    
+	  // Execute Command
+	  int j = execvp(command[0], command);
+	  exit(0);
+	} else {
+	  sleep(1);
+	}
       }
       // >> END FORK
       if (!dest) {
@@ -70,8 +110,9 @@ int main() {
       }
     }
   }
+  
   // > END LOOP
-
+  
   // Exit
   return 0;
 }
