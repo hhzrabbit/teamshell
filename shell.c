@@ -145,6 +145,7 @@ int execute(char ** command) {
   // Execute Command
   int f = fork();
   int j = -1;
+  int status;
   if (f == 0) {
     command = convertTildas(command);
     command = handleRedirects(command);
@@ -158,7 +159,7 @@ int execute(char ** command) {
       printf("Invalid command.\n");
     exit(0);
   } else {
-    wait();
+    wait(&status);
   }
   return j;
 }
