@@ -10,7 +10,11 @@
 #include <string.h>
 #include <fcntl.h>
 
+//store absolute path to home dir
 char home[1024];
+
+//store the dup'd fd for stdin and stdout
+int saveStdIn, saveStdOut = -1;
 
 static void sighandler(int signo) {
   if (signo == SIGINT)
@@ -42,6 +46,7 @@ int checkForRedirect(char ** command, int type){
 //type == 1 -> redirect output
 //returns file descriptor to stdin / stdout that was redirected
 int redirect(char * redirectTo, int type){
+  printf("REDIRECTION!\n");
   int fd;
   int fdToReplace;
   if (type == 0){
@@ -63,38 +68,35 @@ void resetStdInOrOut(int fd, int type){
   dup2(fd, type);
 }
 
-int execute(char ** command) {
-  // Execute Command
-  int f = fork();
-  int j = -1;
-  if (f == 0) {
-    int redirOutput = checkForRedirect(command, 0);
-    int redirInput = checkForRedirect(command, 1);
-    int saveStdIn, saveStdOut = -1;
-    if (redirInput != -1){
-      saveStdIn = redirect(command[redirInput + 1], 0);
-      command[redirInput] = 0;
-    }
-
-    if (redirOutput != -1){
+//if there are > or < in the command, will redirect the stdin/stdout accordingly
+//returns the command with the "> SOMEWHERE" or "< SOMEWHERE" removed
+char ** handleRedirects(char ** command){
+  //redirInput is index of command where the < is
+  int redirInput = checkForRedirect(command, 0);
+  //redirInput is index of command where the > is
+  int redirOutput = checkForRedirect(command, 1);
+      
+  if (redirInput != -1){
+    saveStdIn = redirect(command[redirInput + 1], 0);
+    command[redirInput] = 0;
+  }
+  
+  if (redirOutput != -1){
       saveStdOut = redirect(command[redirOutput + 1], 1);
       command[redirOutput] = 0;
-    }    
-
-    j = execvp(command[0], command);
-
-    if (saveStdIn != -1)
-      resetStdInOrOut(saveStdIn, 0);
-    if (saveStdOut != -1)
-      resetStdInOrOut(saveStdOut, 1);
-    
-    if (j == -1)
-      printf("Invalid command.\n");
-    exit(0);
-  } else {
-    wait();
   }
-  return j;
+
+  return command;
+}
+
+//resets the stdin and stdout to fd 0 and 1 respectively
+void resetStdIO(){
+  if (saveStdIn != -1)
+    resetStdInOrOut(saveStdIn, 0);
+  if (saveStdOut != -1)
+    resetStdInOrOut(saveStdOut, 1);
+  saveStdIn = -1;
+  saveStdOut = -1;
 }
 
 
@@ -108,7 +110,7 @@ void cd(char ** command) {
   //$ cd ~ (takes you home)
   //$ cd ~/<somewhere> 
   else if (command[1][0] == '~'){
-    char path[256];
+    char path[1024];
     strcpy(path, home);
     strcat(path, ++command[1]);
     res = chdir(path);
@@ -123,6 +125,44 @@ void cd(char ** command) {
     printf("No such directory\n");
 }
 
+char ** convertTildas(char ** command){
+  char ** ret = command;
+  while (* command){
+    if (* command[0] == '~') {
+      char path[1024];
+      strncpy(path, home, 1023);
+      strncat(path, ++*command, 1023);
+      printf("%s\n", path);
+      * command = path;
+      printf("%s\n", *command);
+    }
+    command++;
+  }
+  return ret;
+}
+
+int execute(char ** command) {
+  // Execute Command
+  int f = fork();
+  int j = -1;
+  if (f == 0) {
+    command = convertTildas(command);
+    command = handleRedirects(command);
+    
+    j = execvp(command[0], command);
+
+    //revert back to stdin/stdout
+
+    
+    if (j == -1)
+      printf("Invalid command.\n");
+    exit(0);
+  } else {
+    wait();
+  }
+  return j;
+}
+
 int main() {
   // Settings + Signals
   umask(0);
@@ -134,7 +174,7 @@ int main() {
   
   char d[256];
   char * dest = d;
-  char * command[256];
+  char * command[1024];
   int f = -1; // For Forking
   int i = 0; // For Parsing Commands
   

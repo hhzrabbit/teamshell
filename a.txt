@@ -1,0 +1,12 @@
+total 72
+drwxrwxr-x 4 haley haley  4096 Nov 28 22:18 .
+drwxrwxr-x 5 haley haley  4096 Nov 27 21:09 ..
+-rw-rw-r-- 1 haley haley   573 Nov 28 22:11 a.txt
+drwxrwxr-x 8 haley haley  4096 Nov 28 21:30 .git
+-rw-rw-r-- 1 haley haley   273 Nov 24 14:32 .gitignore
+-rw-rw-r-- 1 haley haley   156 Nov 24 14:32 makefile
+-rw-rw-r-- 1 haley haley   317 Nov 28 21:30 README.md
+-rw-rw-r-- 1 haley haley  4048 Nov 28 22:18 shell.c
+-rw-rw-r-- 1 haley haley 12528 Nov 28 22:18 shell.o
+-rwxrwxr-x 1 haley haley 17768 Nov 28 22:18 shell.out
+drwxrwxr-x 3 haley haley  4096 Nov 27 22:49 testdir
