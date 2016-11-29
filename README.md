@@ -7,11 +7,10 @@
 * cd and ls (not forked)
 * exits at SIGINT
 * redirects > and <
+* understands ~ to mean the home directory
 
 ### Unsuccessful Features
 
-
 ### Bugs
-* cannot redirect if the path is abolsute or uses ~ 
 
 ### Function Headers

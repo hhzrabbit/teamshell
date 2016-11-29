@@ -46,7 +46,6 @@ int checkForRedirect(char ** command, int type){
 //type == 1 -> redirect output
 //returns file descriptor to stdin / stdout that was redirected
 int redirect(char * redirectTo, int type){
-  printf("REDIRECTION!\n");
   int fd;
   int fdToReplace;
   if (type == 0){
@@ -107,15 +106,6 @@ void cd(char ** command) {
   if (! command[1]) 
     res = chdir(home);
 
-  //$ cd ~ (takes you home)
-  //$ cd ~/<somewhere> 
-  else if (command[1][0] == '~'){
-    char path[1024];
-    strcpy(path, home);
-    strcat(path, ++command[1]);
-    res = chdir(path);
-  }
-
   //$ cd <somewhere>
   else {
     res = chdir(command[1]);
@@ -125,16 +115,14 @@ void cd(char ** command) {
     printf("No such directory\n");
 }
 
-char ** convertTildas(char ** command){
+char ** convertTildes(char ** command){
   char ** ret = command;
   while (* command){
     if (* command[0] == '~') {
       char path[1024];
       strncpy(path, home, 1023);
       strncat(path, ++*command, 1023);
-      printf("%s\n", path);
       * command = path;
-      printf("%s\n", *command);
     }
     command++;
   }
@@ -147,14 +135,9 @@ int execute(char ** command) {
   int j = -1;
   int status;
   if (f == 0) {
-    command = convertTildas(command);
-    command = handleRedirects(command);
     
     j = execvp(command[0], command);
 
-    //revert back to stdin/stdout
-
-    
     if (j == -1)
       printf("Invalid command.\n");
     exit(0);
@@ -171,11 +154,12 @@ int main() {
   char cwd[1024];
   
   //save path to home
-  getcwd(home, sizeof(cwd));
+  strncpy(home, getenv("HOME"), 1024);
   
   char d[256];
   char * dest = d;
-  char * command[1024];
+  char * cmd[1024];
+  char ** command = cmd;
   int f = -1; // For Forking
   int i = 0; // For Parsing Commands
   
@@ -193,22 +177,25 @@ int main() {
       // Parsing Commands
       i = 0;
       while (dest) {
-	command[i] = strsep(&dest, " ");
+	cmd[i] = strsep(&dest, " ");
 
 	// >> SEMICOLON CHECK
-	if (strcmp(command[i],";") == 0) {
+	if (strcmp(cmd[i],";") == 0) {
 	  break;
 	}
 	// >> END SEMICOLON CHECK
 	i++;
       }
-      command[i] = NULL;  
+      cmd[i] = NULL;  
+      
+      command = convertTildes(command);
+      command = handleRedirects(command);
 
       //cd
-      if (strcmp(command[0], "cd") == 0)
+      if (strcmp(cmd[0], "cd") == 0)
 	cd(command);
       //exit
-      else if (strcmp(command[0], "exit") == 0) 
+      else if (strcmp(cmd[0], "exit") == 0) 
 	exit(0);
       else {
 	  int j = execute(command);
@@ -226,7 +213,3 @@ int main() {
   // Exit
   return 0;
 }
-
-// Debugging Code Dump
-/*  printf("%d\n", j);
-    printf("%s\n", strerror(errno));*/
