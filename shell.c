@@ -170,7 +170,7 @@ int main() {
     getcwd(cwd, sizeof(cwd));
     printf("%s > ", cwd);
     fgets(dest, 256, stdin);
-    if (dest[strlen(dest)-1] = '\n')
+    if (dest[strlen(dest)-1] == '\n')
       dest[strlen(dest)-1] = 0;
 
     while (1) {
