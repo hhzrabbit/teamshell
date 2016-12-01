@@ -16,6 +16,10 @@ char home[1024];
 //store the dup'd fd for stdin and stdout
 int saveStdIn, saveStdOut = -1;
 
+/* static void sighandler(int signo)
+interprets signals and handles accordingly
+args: the signal number for the signal
+return: nothing */
 static void sighandler(int signo) {
   if (signo == SIGINT)
     { // ^C (signal 2)
@@ -23,9 +27,13 @@ static void sighandler(int signo) {
     }
 }
 
-//checks to see if redirection in the command
-//type == 0 -> <
-//type == 1 -> >
+/* int checkForRedirect(char ** command, int type)
+checks to see if redirection symbol in the command
+args: command -- array of strings representing the command entered
+         type -- which redirection symbol to look for:
+             0: < (redirect input)
+             1: -> > (redirect output)
+return: index in the command array of the redirection symbol */
 int checkForRedirect(char ** command, int type){
   char sign[2];
   if (type == 0)
@@ -42,9 +50,13 @@ int checkForRedirect(char ** command, int type){
   return -1;
 }
 
-//type == 0 -> redirect input
-//type == 1 -> redirect output
-//returns file descriptor to stdin / stdout that was redirected
+/* int redirect(char * redirectTo, int type)
+redirects where input comes from/output goes to
+args: redirectTo -- path to new input/output
+            type -- what to redirect (input or output)
+              0: redirect input
+              1: redirect output 
+return: new file descriptor of stdin / stdout */
 int redirect(char * redirectTo, int type){
   int fd;
   int fdToReplace;
@@ -61,14 +73,34 @@ int redirect(char * redirectTo, int type){
   return ret;
 }
 
-//type == 0 -> stdin
-//type == 1 -> stdout
+/* void resetStdInOrOut(int fd, int type)
+(helper fxn) resets stdin/stdin to its standard place in file table
+args:   fd -- standard file descriptor of stdin/stdout
+      type -- what to reset (stdin or stdout)
+        0: stdin
+	1: stdout
+return: nothing */
 void resetStdInOrOut(int fd, int type){
   dup2(fd, type);
 }
 
-//if there are > or < in the command, will redirect the stdin/stdout accordingly
-//returns the command with the "> SOMEWHERE" or "< SOMEWHERE" removed
+/* void resetStdInOrOut(int fd, int type)
+resets the stdin and stdout to fd 0 and 1 respectively
+args: nothing
+return: nothing */
+void resetStdIO(){
+  if (saveStdIn != -1)
+    resetStdInOrOut(saveStdIn, 0);
+  if (saveStdOut != -1)
+    resetStdInOrOut(saveStdOut, 1);
+  saveStdIn = -1;
+  saveStdOut = -1;
+}
+
+/* char ** handleRedirects(char ** command)
+if there are > or < in the command, will redirect the stdin/stdout accordingly
+args: command -- array of strings representing the command entered
+return: command with a NULL in place of the < and/or > if found */
 char ** handleRedirects(char ** command){
   //redirInput is index of command where the < is
   int redirInput = checkForRedirect(command, 0);
@@ -88,17 +120,11 @@ char ** handleRedirects(char ** command){
   return command;
 }
 
-//resets the stdin and stdout to fd 0 and 1 respectively
-void resetStdIO(){
-  if (saveStdIn != -1)
-    resetStdInOrOut(saveStdIn, 0);
-  if (saveStdOut != -1)
-    resetStdInOrOut(saveStdOut, 1);
-  saveStdIn = -1;
-  saveStdOut = -1;
-}
-
-
+/* void cd(char ** command)
+executes the command (change directory)
+args: command -- array of strings representing the command entered
+      will be a cd command
+return: nothing */
 void cd(char ** command) {
   int res;
   
@@ -115,6 +141,10 @@ void cd(char ** command) {
     printf("No such directory\n");
 }
 
+/* char ** convertTildes(char ** command)
+changes any ~ in the command into the absolute path for the home directory
+args: command -- array of strings representing the command entered
+return: command with any ~ replaced */
 char ** convertTildes(char ** command){
   char ** ret = command;
   while (* command){
@@ -129,7 +159,12 @@ char ** convertTildes(char ** command){
   return ret;
 }
 
-int execute(char ** command) {
+/* void execute(char ** command)
+forks and tries to execute command
+prints "<command>: command not found" if command entered does not exist.
+args: command -- array of strings representing the command entered
+return: nothing */
+void execute(char ** command) {
   // Execute Command
   int f = fork();
   int j = -1;
@@ -139,13 +174,13 @@ int execute(char ** command) {
     j = execvp(command[0], command);
 
     if (j == -1)
-      printf("Invalid command.\n");
+      printf("%s: command not found\n", command[0]);
     exit(0);
   } else {
     wait(&status);
   }
-  return j;
 }
+
 
 int main() {
   // Settings + Signals
@@ -201,7 +236,7 @@ int main() {
       else if (strcmp(cmd[0], "exit") == 0) 
 	exit(0);
       else {
-	  int j = execute(command);
+	  execute(command);
       }
       // >> END FORK
       if (!dest) {
