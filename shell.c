@@ -179,6 +179,9 @@ int main() {
       while (dest) {
 	cmd[i] = strsep(&dest, " ");
 
+	//ignore extra spaces
+	//will re-write cmd[i] on next iteration of the loop
+	if (strcmp(cmd[i], "") == 0) i--;
 	// >> SEMICOLON CHECK
 	if (strcmp(cmd[i],";") == 0) {
 	  break;

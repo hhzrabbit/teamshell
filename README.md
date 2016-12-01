@@ -8,6 +8,7 @@
 * exits at SIGINT
 * redirects > and <
 * understands ~ to mean the home directory
+* will not break if command entered has extraneous spaces
 
 ### Unsuccessful Features
 
