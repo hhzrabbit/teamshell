@@ -10,9 +10,15 @@
 * understands ~ to mean the home directory
 * will not break if command entered has extraneous spaces
 
+---
+
 ### Unsuccessful Features
 
+---
+
 ### Bugs
+
+---
 
 ### Function Headers
 
