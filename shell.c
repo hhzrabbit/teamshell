@@ -27,6 +27,65 @@ static void sighandler(int signo) {
     }
 }
 
+
+
+int run_piping(char *cmd) {
+    char* first = strsep(&cmd, "|");
+    char** parsed = parse_cmd(first);
+    if (cmd == NULL) {
+        return execvp(parsed[0], parsed);
+    }
+    pid_t fds[2];
+    if (pipe(fds) == -1) {
+        printf("pipe failed!");
+        exit(1);
+    }
+    pid_t p = fork();
+    if (p == 0) {
+        dup2(fds[1], STDOUT_FILENO);
+        execvp(parsed[0], parsed);
+        exit(1);
+    } else {
+        close(fds[1]);
+        pid_t q = fork();
+        if (q == 0) {
+            dup2(fds[0], STDIN_FILENO);
+            run_pipeline(cmd);
+            exit(1);
+        } else {
+            close(fds[0]);
+            int pstatus = 0, qstatus = 0;
+            waitpid(p, &pstatus, 0);
+            waitpid(q, &qstatus, 0);
+        }
+    }
+    return 0;
+}
+
+char** parse_cmd(char* input){
+  char ** parse = (char **)calloc(sizeof(char *), num_blanks(input) + 2);
+  int ctr = 0;
+  char* next = input;
+  while(next){
+    while (next[0] == ' ' || next[0] == '\t') {
+      next++;
+    }
+    if (next[0] == '\0') {
+      break;
+    }
+    parse[ctr]=strsep(&next, " ");
+    ctr++;
+  }
+  ctr = 0;
+  while(parse[ctr]){
+    ctr++;
+  }
+  return parse;
+}
+
+
+
+
 /* int checkForRedirect(char ** command, int type)
 checks to see if redirection symbol in the command
 args: command -- array of strings representing the command entered
@@ -210,6 +269,7 @@ int main() {
     getcwd(cwd, sizeof(cwd));
     printf("%s > ", cwd);
     fgets(dest, 256, stdin);
+
     if (!*(dest+1)) continue;
     strip(dest);
     //    if (dest[strlen(dest)-1] == '\n')
