@@ -21,7 +21,7 @@ void strip(char * in) {
   while (*tmp) {
     if (!front && !(*tmp == ' ' || *tmp == '\t' || *tmp == '\n'))
       front = tmp;
-    if (!(*tmp == ' ' || *tmp == '\t' || *tmp == '\n'))
+    if (!(*tmp == ' ' || *tmp == '\t' || *tmp == '\n' || *tmp == ';'))
       end = tmp;
     tmp++;
   }
