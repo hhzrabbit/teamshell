@@ -181,6 +181,11 @@ void execute(char ** command) {
   }
 }
 
+
+/* int main()
+forever loop: read input using fgets, prep input as needed, parse input into command, executes command
+args: nothing
+return: 0 (exit successfully)*/
 int main() {
   // Settings + Signals
   umask(0);
