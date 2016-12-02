@@ -195,7 +195,7 @@ int main() {
   //save path to home
   strncpy(home, getenv("HOME"), 1024);
   
-  char d[256];
+  char d[1024];
   char * dest = d;
   char ** pdest = &dest;
   char * cmd[1024];
@@ -211,12 +211,13 @@ int main() {
     printf("%s > ", cwd);
     fgets(dest, 256, stdin);
     if (!*(dest+1)) continue;
-    if (dest[strlen(dest)-1] == '\n')
-      dest[strlen(dest)-1] = ';'; // Add semicolon to end for efficient parsing
+    strip(dest);
+    //    if (dest[strlen(dest)-1] == '\n')
+    dest[strlen(dest)+1] = 0; // Move terminating char one down
+    dest[strlen(dest)] = ';'; // Add semicolon to end for efficient parsing
 
     // EXECUTION LOOP
     while (1) {
-      
       if (!parseCommands(cmd, dest, pdest))
 	break;
       command = convertTildes(command);
