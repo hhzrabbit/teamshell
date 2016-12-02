@@ -181,7 +181,6 @@ void execute(char ** command) {
   }
 }
 
-
 int main() {
   // Settings + Signals
   umask(0);
@@ -193,6 +192,7 @@ int main() {
   
   char d[256];
   char * dest = d;
+  char ** pdest = &dest;
   char * cmd[1024];
   char ** command = cmd;
   int f = -1; // For Forking
@@ -205,27 +205,15 @@ int main() {
     getcwd(cwd, sizeof(cwd));
     printf("%s > ", cwd);
     fgets(dest, 256, stdin);
+    if (!*(dest+1)) continue;
     if (dest[strlen(dest)-1] == '\n')
-      dest[strlen(dest)-1] = 0;
+      dest[strlen(dest)-1] = ';'; // Add semicolon to end for efficient parsing
 
+    // EXECUTION LOOP
     while (1) {
-      // Parsing Commands
-      i = 0;
-      while (dest) {
-	cmd[i] = strsep(&dest, " ");
-
-	//ignore extra spaces
-	//will re-write cmd[i] on next iteration of the loop
-	if (strcmp(cmd[i], "") == 0) i--;
-	// >> SEMICOLON CHECK
-	if (strcmp(cmd[i],";") == 0) {
-	  break;
-	}
-	// >> END SEMICOLON CHECK
-	i++;
-      }
-      cmd[i] = NULL;  
       
+      if (!parseCommands(cmd, dest, pdest))
+	break;
       command = convertTildes(command);
       command = handleRedirects(command);
 
@@ -238,14 +226,8 @@ int main() {
       else {
 	  execute(command);
       }
-      // >> END FORK
-      if (!dest) {
-	dest = d; // RESET BUFFER
-	break;
-      }
     }
   }
-  
   // > END LOOP
   
   // Exit
