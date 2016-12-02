@@ -61,11 +61,11 @@ int redirect(char * redirectTo, int type){
   int fd;
   int fdToReplace;
   if (type == 0){
-    fd = open(redirectTo, O_RDONLY);
+    fd = open(redirectTo, O_CREAT | O_RDWR, 0644);
     fdToReplace = 0;
   }
   else {
-    fd = open(redirectTo, O_WRONLY);
+    fd = open(redirectTo, O_CREAT | O_RDWR, 0644);
     fdToReplace = 1;
   }
   int ret = dup(fdToReplace);
@@ -81,7 +81,7 @@ args:   fd -- standard file descriptor of stdin/stdout
 	1: stdout
 return: nothing */
 void resetStdInOrOut(int fd, int type){
-  dup2(fd, type);
+  int a = dup2(fd, type);
 }
 
 /* void resetStdInOrOut(int fd, int type)
@@ -188,7 +188,7 @@ args: nothing
 return: 0 (exit successfully)*/
 int main() {
   // Settings + Signals
-  umask(0);
+  umask(0000);
   signal (SIGINT, sighandler);
   char cwd[1024];
   
@@ -231,6 +231,7 @@ int main() {
       else {
 	  execute(command);
       }
+      resetStdIO();
     }
   }
   // > END LOOP
