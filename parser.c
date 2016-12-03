@@ -65,5 +65,14 @@ char * verify(char * in) {
   if (strstr(in, ";;")) return strcpy(in, ";;");
   if (strstr(in, "&;")) return strcpy(in, "&;");
   if (strstr(in, ";&")) return strcpy(in, ";&");
+  while (*in) {
+    if (*in == ' ' || *in == '\n' || *in == '\t') 
+      ;
+    else if (*in == ';')
+      return strcpy(in, "leading ;");
+    else
+      break;
+    in++;
+  }
   return NULL;
 }
