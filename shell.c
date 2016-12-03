@@ -130,6 +130,11 @@ char ** handleRedirects(char ** command){
   return command;
 }
 
+
+/* int checkForPiping(char ** command)
+checks to see if piping symbol in command
+args: command -- array of strings representing the command entered
+return: index of command array of the |, or -1 if not found*/
 int checkForPiping(char ** command){
   int index = 0;
   while(* command) {
@@ -141,6 +146,10 @@ int checkForPiping(char ** command){
   return -1;
 }
 
+/* int pipedAndRan(char ** command)
+if pipe in the command array, pipes and executes commands
+args: command -- array of strings representing the command entered
+return: int for boolean value (1 if piped and ran, 0 if no pipe in command */
 int pipedAndRan(char ** command){
   //no piping to be done
   int index = checkForPiping(command);
