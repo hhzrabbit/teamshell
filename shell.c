@@ -18,6 +18,9 @@ char home[1024];
 //store the dup'd fd for stdin and stdout
 int saveStdIn, saveStdOut = -1;
 
+// check if program is executing something else at the moment
+int working = 0;
+
 /* static void sighandler(int signo)
    interprets signals and handles accordingly
    args: the signal number for the signal
@@ -25,7 +28,8 @@ int saveStdIn, saveStdOut = -1;
 static void sighandler(int signo) {
   if (signo == SIGINT)
     { // ^C (signal 2)
-      exit(0);
+      if (!working)
+	exit(0);
     }
 }
 
@@ -244,16 +248,16 @@ char ** handleRedirects(char ** command){
     int f = fork();
     int j = -1;
     int status;
+    working = f;
     if (f == 0) {
-    
       j = execvp(command[0], command);
-
       if (j == -1)
 	printf("%s: command not found\n", command[0]);
       exit(0);
     } else {
       wait(&status);
     }
+    working = 0;
   }
 
   /* int main()
