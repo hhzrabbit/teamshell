@@ -70,6 +70,8 @@ char * verify(char * in) {
       ;
     else if (*in == ';')
       return strcpy(in, "leading ;");
+    else
+      break;
     in++;
   }
   return NULL;
