@@ -9,7 +9,7 @@
 * cd and ls (not forked)
 * exits at SIGINT
 	* will not exit if the shell is running another program
-* redirects > and <
+* redirects >, >>, and <
 * pipes (only single pipe)
 * understands ~ to mean the home directory
 * will not break if command entered has extraneous whitespace
