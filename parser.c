@@ -7,6 +7,7 @@
 // Headers
 void strip(char * in);
 char * parseCommands(char ** cmds, char * in, char ** parent);
+char * verify(char * in);
 
 // Functions
 /* void strip(char * in)
@@ -57,4 +58,17 @@ char * parseCommands(char ** cmd, char * in, char ** parent) {
   cmd[i] = NULL;
   *parent = in;
   return in;
+}
+
+/* char * verify(char * in)
+ * reads a string and makes sure there are no symbols that will cause it to crash
+ * args: char * in - input string with unparsed command line arguments
+ * return: the bad token if contains any bad identifiers (;;, ;&, &;)
+ *         null otherwise
+ */
+char * verify(char * in) {
+  if (strstr(in, ";;")) return strcpy(in, ";;");
+  if (strstr(in, "&;")) return strcpy(in, "&;");
+  if (strstr(in, ";&")) return strcpy(in, ";&");
+  return NULL;
 }

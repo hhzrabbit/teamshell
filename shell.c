@@ -208,13 +208,21 @@ int main() {
 
     // Reading From Command Line
     getcwd(cwd, sizeof(cwd));
-    printf("%s > ", cwd);
+    printf("%s> ", cwd);
     fgets(dest, 256, stdin);
     if (!*(dest+1)) continue;
+
+    // Verify Input Parsable
+    if (verify(dest) != 0) {
+      printf("Encountered Bad Token: %s\n", dest);
+      continue; 
+    }
+
+    // Preparsing
     strip(dest);
-    //    if (dest[strlen(dest)-1] == '\n')
     dest[strlen(dest)+1] = 0; // Move terminating char one down
     dest[strlen(dest)] = ';'; // Add semicolon to end for efficient parsing
+
 
     // EXECUTION LOOP
     while (1) {
