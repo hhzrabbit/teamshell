@@ -1,5 +1,5 @@
 // Simple Terminal / Shell in C
-
+#define _GNU_SOURCE   
 #include <stdio.h> 
 #include <stdlib.h> 
 #include <unistd.h>
@@ -9,12 +9,20 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include "shell.h"
+#include "parser.h"
 
-//store absolute path to home dir
+
+// store absolute path to home dir
 char home[1024];
 
-//store the dup'd fd for stdin and stdout
+// store the dup'd fd for stdin and stdout
 int saveStdIn, saveStdOut = -1;
+
+// check if program is executing something else at the moment
+int working = 0;
 
 /* static void sighandler(int signo)
 interprets signals and handles accordingly
@@ -23,10 +31,12 @@ return: nothing */
 static void sighandler(int signo) {
   if (signo == SIGINT)
     { // ^C (signal 2)
-      exit(0);
+      if (!working)
+	exit(0);
     }
 }
 
+<<<<<<< HEAD
 
 
 int run_piping(char *cmd) {
@@ -107,7 +117,32 @@ int checkForRedirect(char ** command, int type){
     command++;
   }
   return -1;
+=======
+/* void resetStdInOrOut(int fd, int type)
+(helper fxn) resets stdin/stdin to its standard place in file table
+args:   fd -- standard file descriptor of stdin/stdout
+      type -- what to reset (stdin or stdout)
+        0: stdin
+	1: stdout
+return: nothing */
+void resetStdInOrOut(int fd, int type){
+  int a = dup2(fd, type);
 }
+
+/* void resetStdInOrOut(int fd, int type)
+resets the stdin and stdout to fd 0 and 1 respectively
+args: nothing
+return: nothing */
+void resetStdIO(){
+  if (saveStdIn != -1)
+    resetStdInOrOut(saveStdIn, 0);
+  if (saveStdOut != -1)
+    resetStdInOrOut(saveStdOut, 1);
+  saveStdIn = -1;
+  saveStdOut = -1;
+>>>>>>> 4817d78156a249679f5a24fff0ed35eba69b3090
+}
+
 
 /* int redirect(char * redirectTo, int type)
 redirects where input comes from/output goes to
@@ -132,28 +167,27 @@ int redirect(char * redirectTo, int type){
   return ret;
 }
 
-/* void resetStdInOrOut(int fd, int type)
-(helper fxn) resets stdin/stdin to its standard place in file table
-args:   fd -- standard file descriptor of stdin/stdout
-      type -- what to reset (stdin or stdout)
-        0: stdin
-	1: stdout
-return: nothing */
-void resetStdInOrOut(int fd, int type){
-  int a = dup2(fd, type);
-}
-
-/* void resetStdInOrOut(int fd, int type)
-resets the stdin and stdout to fd 0 and 1 respectively
-args: nothing
-return: nothing */
-void resetStdIO(){
-  if (saveStdIn != -1)
-    resetStdInOrOut(saveStdIn, 0);
-  if (saveStdOut != -1)
-    resetStdInOrOut(saveStdOut, 1);
-  saveStdIn = -1;
-  saveStdOut = -1;
+/* int checkForRedirect(char ** command, int type)
+checks to see if redirection symbol in the command
+args: command -- array of strings representing the command entered
+         type -- which redirection symbol to look for:
+             0: < (redirect input)
+             1: -> > (redirect output)
+return: index in the command array of the redirection symbol */
+int checkForRedirect(char ** command, int type){
+  char sign[2];
+  if (type == 0)
+    strncpy(sign, "<", 2);
+  else 
+    strncpy(sign, ">", 2);
+  int index = 0;
+  while(* command) {
+    if (strcmp(* command, sign) == 0)
+      return index;
+    index++;
+    command++;
+  }
+  return -1;
 }
 
 /* char ** handleRedirects(char ** command)
@@ -177,6 +211,63 @@ char ** handleRedirects(char ** command){
   }
 
   return command;
+}
+
+
+/* int checkForPiping(char ** command)
+checks to see if piping symbol in command
+args: command -- array of strings representing the command entered
+return: index of command array of the |, or -1 if not found*/
+int checkForPiping(char ** command){
+  int index = 0;
+  while(* command) {
+    if (strcmp(* command, "|") == 0)
+      return index;
+    index++;
+    command++;
+  }
+  return -1;
+}
+
+/* int pipedAndRan(char ** command)
+if pipe in the command array, pipes and executes commands
+args: command -- array of strings representing the command entered
+return: int for boolean value (1 if piped and ran, 0 if no pipe in command */
+int pipedAndRan(char ** command){
+  //no piping to be done
+  int index = checkForPiping(command);
+  if (index == -1)
+    return 0; //boolean false
+
+  //pointer to beginning of command after the |
+  char ** secondCommand = (command + index + 1);
+  command[index] = 0;
+  
+  int pipefd[2];
+  pipe(pipefd);
+
+  int status;
+  int j = -1;
+  
+  int fd = fork();
+  if (fd == 0) { //chlild
+    close(pipefd[0]);
+    saveStdOut = dup(1);
+    dup2(pipefd[1], 1);
+    execute(command); // Execute First Command
+    close(pipefd[1]);
+    exit(0);
+  }
+  else {
+    wait(&status);
+    close(pipefd[1]);
+    saveStdIn = dup(0);
+    dup2(pipefd[0], 0);
+    execute(secondCommand); // Execute Second Command
+    close(pipefd[0]);
+  }
+  return 1; //boolean
+  
 }
 
 /* void cd(char ** command)
@@ -226,6 +317,7 @@ return: nothing */
 void execute(char ** command) {
   // Execute Command
   int f = fork();
+  working = f;
   int j = -1;
   int status;
   if (f == 0) {
@@ -238,6 +330,7 @@ void execute(char ** command) {
   } else {
     wait(&status);
   }
+  working = 0;
 }
 
 
@@ -267,14 +360,22 @@ int main() {
 
     // Reading From Command Line
     getcwd(cwd, sizeof(cwd));
-    printf("%s > ", cwd);
+    printf("%s> ", cwd);
     fgets(dest, 256, stdin);
 
     if (!*(dest+1)) continue;
+
+    // Verify Input Parsable
+    if (verify(dest) != 0) {
+      printf("Encountered Bad Token: %s\n", dest);
+      continue; 
+    }
+
+    // Preparsing
     strip(dest);
-    //    if (dest[strlen(dest)-1] == '\n')
     dest[strlen(dest)+1] = 0; // Move terminating char one down
     dest[strlen(dest)] = ';'; // Add semicolon to end for efficient parsing
+
 
     // EXECUTION LOOP
     while (1) {
@@ -289,8 +390,10 @@ int main() {
       //exit
       else if (strcmp(cmd[0], "exit") == 0) 
 	exit(0);
-      else {
-	  execute(command);
+      //piping
+      else if (! pipedAndRan(command)) {
+	execute(command);
+	
       }
       resetStdIO();
     }

@@ -1,5 +1,5 @@
 # teamshell
-### by Vandana Agarwala, Haley Zeng, and Zicheng Zhen: Systems with DW, Period 4
+### by Haley Zeng, and Zicheng Zhen, Vandana Agarwala: Systems with DW, Period 4
 
 ### Features
 * forks and executes each command inputted
@@ -7,12 +7,15 @@
 * cd and ls (not forked)
 * exits at SIGINT
 * redirects > and <
+* pipes (only single pipe)
 * understands ~ to mean the home directory
 * will not break if command entered has extraneous spaces
 
 ---
 
 ### Unsuccessful Features
+* Clearing (CTRL+L) and being able to access last statement using up key.
+* Multiple pipes
 
 ---
 
@@ -69,12 +72,26 @@ resets the stdin and stdout to fd 0 and 1 respectively
 * args: nothing
 * return: nothing
 
-`char ** handleRedirects(char ** command)```
+```char ** handleRedirects(char ** command)```
 
 if there are > or < in the command, will redirect the stdin/stdout accordingly
 
 * args: command -- array of strings representing the command entered
 * return: command with a NULL in place of the < and/or > if found */
+
+```int checkForPiping(char ** command)```
+
+checks to see if piping symbol in command
+
+* args: command -- array of strings representing the command entered
+* return: index of command array of the |, or -1 if not found
+
+```int pipedAndRan(char ** command)```
+
+if pipe in the command array, pipes and executes commands
+
+* args: command -- array of strings representing the command entered
+* return: int for boolean value (1 if piped and ran, 0 if no pipe in command
 
 ```void cd(char ** command)```
 
