@@ -69,7 +69,7 @@ int redirect(char * redirectTo, int type){
     fdToReplace = 0;
   }
   else {
-    fd = open(redirectTo, O_CREAT | O_RDWR, 0644);
+    fd = open(redirectTo, O_CREAT | O_RDWR | O_TRUNC, 0644);
     fdToReplace = 1;
   }
   int ret = dup(fdToReplace);
