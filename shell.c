@@ -15,11 +15,14 @@
 #include "parser.h"
 
 
-//store absolute path to home dir
+// store absolute path to home dir
 char home[1024];
 
-//store the dup'd fd for stdin and stdout
+// store the dup'd fd for stdin and stdout
 int saveStdIn, saveStdOut = -1;
+
+// check if program is executing something else at the moment
+int working = 0;
 
 /* static void sighandler(int signo)
 interprets signals and handles accordingly
@@ -28,7 +31,8 @@ return: nothing */
 static void sighandler(int signo) {
   if (signo == SIGINT)
     { // ^C (signal 2)
-      exit(0);
+      if (!working)
+	exit(0);
     }
 }
 
@@ -221,6 +225,7 @@ return: nothing */
 void execute(char ** command) {
   // Execute Command
   int f = fork();
+  working = f;
   int j = -1;
   int status;
   if (f == 0) {
@@ -233,6 +238,7 @@ void execute(char ** command) {
   } else {
     wait(&status);
   }
+  working = 0;
 }
 
 
