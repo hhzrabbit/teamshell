@@ -158,11 +158,7 @@ int pipedAndRan(char ** command){
     close(pipefd[0]);
     saveStdOut = dup(1);
     dup2(pipefd[1], 1);
-    j = execvp(command[0], command);
-
-    if (j == -1)
-      printf("%s: command not found\n", command[0]);
-
+    execute(command); // Execute First Command
     close(pipefd[1]);
     exit(0);
   }
@@ -171,42 +167,8 @@ int pipedAndRan(char ** command){
     close(pipefd[1]);
     saveStdIn = dup(0);
     dup2(pipefd[0], 0);
-    j = execvp(secondCommand[0], secondCommand);
-    
-    if (j == -1)
-	printf("%s: command not found\n", secondCommand[0]);
+    execute(secondCommand); // Execute Second Command
     close(pipefd[0]);
-    
-    
-
-
-  /* int fff = open("BOOYA", O_CREAT | O_RDWR, 0644); */
-  /* //  printf("fff %d\n", fff); */
-
-
-  /* //make the outstream become stdin */
-  /* saveStdOut = dup(1); */
-  /* //printf("stdOut %d\n", saveStdOut); */
-  /* dup2(fff, 1); */
-  /* //printf("%d\n", b); */
-  /* //printf("eeee: %d\n", e); */
-  /* execute(command); */
-
-  /* //reset outstream to normal */
-  /* fff = dup(fff); */
-  /* dup2(saveStdOut, 1); */
-  /* saveStdOut = -1; */
-
-  /* saveStdIn = dup(0); */
-  /* dup2(fff, 0); */
-
-  /* execute(secondCommand); */
-
-  /* dup2(saveStdIn, 0); */
-  /* saveStdIn = 0; */
-
-  /* remove("BOOYA"); */
-
   }
   return 1; //boolean
   
