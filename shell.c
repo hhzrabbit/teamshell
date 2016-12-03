@@ -15,14 +15,11 @@
 #include "parser.h"
 
 
-// store absolute path to home dir
+//store absolute path to home dir
 char home[1024];
 
-// store the dup'd fd for stdin and stdout
+//store the dup'd fd for stdin and stdout
 int saveStdIn, saveStdOut = -1;
-
-// check if program is executing something else at the moment
-int working = 0;
 
 /* static void sighandler(int signo)
 interprets signals and handles accordingly
@@ -31,93 +28,10 @@ return: nothing */
 static void sighandler(int signo) {
   if (signo == SIGINT)
     { // ^C (signal 2)
-      if (!working)
-	exit(0);
+      exit(0);
     }
 }
 
-<<<<<<< HEAD
-
-
-int run_piping(char *cmd) {
-    char* first = strsep(&cmd, "|");
-    char** parsed = parse_cmd(first);
-    if (cmd == NULL) {
-        return execvp(parsed[0], parsed);
-    }
-    pid_t fds[2];
-    if (pipe(fds) == -1) {
-        printf("pipe failed!");
-        exit(1);
-    }
-    pid_t p = fork();
-    if (p == 0) {
-        dup2(fds[1], STDOUT_FILENO);
-        execvp(parsed[0], parsed);
-        exit(1);
-    } else {
-        close(fds[1]);
-        pid_t q = fork();
-        if (q == 0) {
-            dup2(fds[0], STDIN_FILENO);
-            run_pipeline(cmd);
-            exit(1);
-        } else {
-            close(fds[0]);
-            int pstatus = 0, qstatus = 0;
-            waitpid(p, &pstatus, 0);
-            waitpid(q, &qstatus, 0);
-        }
-    }
-    return 0;
-}
-
-char** parse_cmd(char* input){
-  char ** parse = (char **)calloc(sizeof(char *), num_blanks(input) + 2);
-  int ctr = 0;
-  char* next = input;
-  while(next){
-    while (next[0] == ' ' || next[0] == '\t') {
-      next++;
-    }
-    if (next[0] == '\0') {
-      break;
-    }
-    parse[ctr]=strsep(&next, " ");
-    ctr++;
-  }
-  ctr = 0;
-  while(parse[ctr]){
-    ctr++;
-  }
-  return parse;
-}
-
-
-
-
-/* int checkForRedirect(char ** command, int type)
-checks to see if redirection symbol in the command
-args: command -- array of strings representing the command entered
-         type -- which redirection symbol to look for:
-             0: < (redirect input)
-             1: -> > (redirect output)
-return: index in the command array of the redirection symbol */
-int checkForRedirect(char ** command, int type){
-  char sign[2];
-  if (type == 0)
-    strncpy(sign, "<", 2);
-  else 
-    strncpy(sign, ">", 2);
-  int index = 0;
-  while(* command) {
-    if (strcmp(* command, sign) == 0)
-      return index;
-    index++;
-    command++;
-  }
-  return -1;
-=======
 /* void resetStdInOrOut(int fd, int type)
 (helper fxn) resets stdin/stdin to its standard place in file table
 args:   fd -- standard file descriptor of stdin/stdout
@@ -140,7 +54,6 @@ void resetStdIO(){
     resetStdInOrOut(saveStdOut, 1);
   saveStdIn = -1;
   saveStdOut = -1;
->>>>>>> 4817d78156a249679f5a24fff0ed35eba69b3090
 }
 
 
@@ -317,7 +230,6 @@ return: nothing */
 void execute(char ** command) {
   // Execute Command
   int f = fork();
-  working = f;
   int j = -1;
   int status;
   if (f == 0) {
@@ -330,7 +242,6 @@ void execute(char ** command) {
   } else {
     wait(&status);
   }
-  working = 0;
 }
 
 
@@ -362,7 +273,6 @@ int main() {
     getcwd(cwd, sizeof(cwd));
     printf("%s> ", cwd);
     fgets(dest, 256, stdin);
-
     if (!*(dest+1)) continue;
 
     // Verify Input Parsable
