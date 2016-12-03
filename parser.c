@@ -4,11 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Headers
-void strip(char * in);
-char * parseCommands(char ** cmds, char * in, char ** parent);
-char * verify(char * in);
-
 // Functions
 /* void strip(char * in)
  * takes in a string and removes all leading and trailing whitespace (modifies the string)

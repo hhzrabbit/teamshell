@@ -1,5 +1,5 @@
 // Simple Terminal / Shell in C
-
+#define _GNU_SOURCE   
 #include <stdio.h> 
 #include <stdlib.h> 
 #include <unistd.h>
@@ -9,6 +9,11 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include "shell.h"
+#include "parser.h"
+
 
 //store absolute path to home dir
 char home[1024];
@@ -25,52 +30,6 @@ static void sighandler(int signo) {
     { // ^C (signal 2)
       exit(0);
     }
-}
-
-/* int checkForRedirect(char ** command, int type)
-checks to see if redirection symbol in the command
-args: command -- array of strings representing the command entered
-         type -- which redirection symbol to look for:
-             0: < (redirect input)
-             1: -> > (redirect output)
-return: index in the command array of the redirection symbol */
-int checkForRedirect(char ** command, int type){
-  char sign[2];
-  if (type == 0)
-    strncpy(sign, "<", 2);
-  else 
-    strncpy(sign, ">", 2);
-  int index = 0;
-  while(* command) {
-    if (strcmp(* command, sign) == 0)
-      return index;
-    index++;
-    command++;
-  }
-  return -1;
-}
-
-/* int redirect(char * redirectTo, int type)
-redirects where input comes from/output goes to
-args: redirectTo -- path to new input/output
-            type -- what to redirect (input or output)
-              0: redirect input
-              1: redirect output 
-return: new file descriptor of stdin / stdout */
-int redirect(char * redirectTo, int type){
-  int fd;
-  int fdToReplace;
-  if (type == 0){
-    fd = open(redirectTo, O_CREAT | O_RDWR, 0644);
-    fdToReplace = 0;
-  }
-  else {
-    fd = open(redirectTo, O_CREAT | O_RDWR, 0644);
-    fdToReplace = 1;
-  }
-  int ret = dup(fdToReplace);
-  dup2(fd, fdToReplace);
-  return ret;
 }
 
 /* void resetStdInOrOut(int fd, int type)
@@ -97,6 +56,53 @@ void resetStdIO(){
   saveStdOut = -1;
 }
 
+
+/* int redirect(char * redirectTo, int type)
+redirects where input comes from/output goes to
+args: redirectTo -- path to new input/output
+            type -- what to redirect (input or output)
+              0: redirect input
+              1: redirect output 
+return: new file descriptor of stdin / stdout */
+int redirect(char * redirectTo, int type){
+  int fd;
+  int fdToReplace;
+  if (type == 0){
+    fd = open(redirectTo, O_CREAT | O_RDWR, 0644);
+    fdToReplace = 0;
+  }
+  else {
+    fd = open(redirectTo, O_CREAT | O_RDWR, 0644);
+    fdToReplace = 1;
+  }
+  int ret = dup(fdToReplace);
+  dup2(fd, fdToReplace);
+  return ret;
+}
+
+/* int checkForRedirect(char ** command, int type)
+checks to see if redirection symbol in the command
+args: command -- array of strings representing the command entered
+         type -- which redirection symbol to look for:
+             0: < (redirect input)
+             1: -> > (redirect output)
+return: index in the command array of the redirection symbol */
+int checkForRedirect(char ** command, int type){
+  char sign[2];
+  if (type == 0)
+    strncpy(sign, "<", 2);
+  else 
+    strncpy(sign, ">", 2);
+  int index = 0;
+  while(* command) {
+    if (strcmp(* command, sign) == 0)
+      return index;
+    index++;
+    command++;
+  }
+  return -1;
+}
+
 /* char ** handleRedirects(char ** command)
 if there are > or < in the command, will redirect the stdin/stdout accordingly
 args: command -- array of strings representing the command entered
@@ -118,6 +124,92 @@ char ** handleRedirects(char ** command){
   }
 
   return command;
+}
+
+int checkForPiping(char ** command){
+  int index = 0;
+  while(* command) {
+    if (strcmp(* command, "|") == 0)
+      return index;
+    index++;
+    command++;
+  }
+  return -1;
+}
+
+int pipedAndRan(char ** command){
+  //no piping to be done
+  int index = checkForPiping(command);
+  if (index == -1)
+    return 0; //boolean false
+
+  //pointer to beginning of command after the |
+  char ** secondCommand = (command + index + 1);
+  command[index] = 0;
+  
+  int pipefd[2];
+  pipe(pipefd);
+
+  int status;
+  int j = -1;
+  
+  int fd = fork();
+  if (fd == 0) { //chlild
+    close(pipefd[0]);
+    saveStdOut = dup(1);
+    dup2(pipefd[1], 1);
+    j = execvp(command[0], command);
+
+    if (j == -1)
+      printf("%s: command not found\n", command[0]);
+
+    close(pipefd[1]);
+    exit(0);
+  }
+  else {
+    wait(&status);
+    close(pipefd[1]);
+    saveStdIn = dup(0);
+    dup2(pipefd[0], 0);
+    j = execvp(secondCommand[0], secondCommand);
+    
+    if (j == -1)
+	printf("%s: command not found\n", secondCommand[0]);
+    close(pipefd[0]);
+    
+    
+
+
+  /* int fff = open("BOOYA", O_CREAT | O_RDWR, 0644); */
+  /* //  printf("fff %d\n", fff); */
+
+
+  /* //make the outstream become stdin */
+  /* saveStdOut = dup(1); */
+  /* //printf("stdOut %d\n", saveStdOut); */
+  /* dup2(fff, 1); */
+  /* //printf("%d\n", b); */
+  /* //printf("eeee: %d\n", e); */
+  /* execute(command); */
+
+  /* //reset outstream to normal */
+  /* fff = dup(fff); */
+  /* dup2(saveStdOut, 1); */
+  /* saveStdOut = -1; */
+
+  /* saveStdIn = dup(0); */
+  /* dup2(fff, 0); */
+
+  /* execute(secondCommand); */
+
+  /* dup2(saveStdIn, 0); */
+  /* saveStdIn = 0; */
+
+  /* remove("BOOYA"); */
+
+  }
+  return 1; //boolean
+  
 }
 
 /* void cd(char ** command)
@@ -237,8 +329,10 @@ int main() {
       //exit
       else if (strcmp(cmd[0], "exit") == 0) 
 	exit(0);
-      else {
-	  execute(command);
+      //piping
+      else if (! pipedAndRan(command)) {
+	execute(command);
+	
       }
       resetStdIO();
     }
