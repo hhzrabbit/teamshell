@@ -1,19 +1,16 @@
 // Simple Terminal / Shell in C
-#define _GNU_SOURCE   
 #include <stdio.h> 
 #include <stdlib.h> 
 #include <unistd.h>
-#include <signal.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
+#include <signal.h>
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 #include "shell.h"
 #include "parser.h"
-
 
 //store absolute path to home dir
 char home[1024];
@@ -244,7 +241,6 @@ void execute(char ** command) {
   }
 }
 
-
 /* int main()
 forever loop: read input using fgets, prep input as needed, parse input into command, executes command
 args: nothing
@@ -270,8 +266,11 @@ int main() {
   while (1) {
 
     // Reading From Command Line
+
+    //print prompt
     getcwd(cwd, sizeof(cwd));
     printf("%s> ", cwd);
+
     fgets(dest, 256, stdin);
     if (!*(dest+1)) continue;
 
